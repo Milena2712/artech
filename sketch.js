@@ -5,7 +5,7 @@ let animFrame = 0; // Contador para a animação da imagem
 let useTexture = false; // Define se a cabaça terá textura aplicada
 let imageSize; // Tamanho atual da imagem
 let minSize = 2; // Tamanho mínimo da imagem
-let maxSize; // Tamanho máximo da imagem (definido no setup)
+let maxSize; // Tamanho máximo da imagem (definido dinamicamente)
 let aspectRatio; // Proporção da imagem
 let animationDuration = 500; // Tempo total da animação da imagem (em frames)
 let shrinking = true; // Indica se a imagem está diminuindo
@@ -20,12 +20,43 @@ function preload() {
   bgImage = loadImage('https://raw.githubusercontent.com/Milena2712/artech/main/sketch1739498717530 (1).png');
 }
 
+// Função para calcular o tamanho máximo da imagem baseado no tamanho da tela
+function calculateMaxSize() {
+  // Calcula o tamanho máximo baseado na menor dimensão da tela
+  // Isso garante que a imagem sempre caiba na tela
+  let maxDimension = min(windowWidth, windowHeight);
+  // Usa 80% da menor dimensão para dar uma margem
+  return maxDimension * 0.8;
+}
+
 // Configuração inicial da tela e valores padrão
 function setup() {
-  createCanvas(500, 800, WEBGL);
-  aspectRatio = bgImage.width / bgImage.height; // Calcula a proporção da imagem
-  maxSize = width; // Define o tamanho máximo da imagem com base na largura do canvas
+  // Cria canvas que ocupa toda a janela
+  createCanvas(windowWidth, windowHeight, WEBGL);
+  
+  // Calcula a proporção da imagem
+  aspectRatio = bgImage.width / bgImage.height;
+  
+  // Calcula o tamanho máximo baseado no tamanho atual da tela
+  maxSize = calculateMaxSize();
   imageSize = maxSize; // Começa com o tamanho máximo
+}
+
+// Função chamada quando a janela é redimensionada
+function windowResized() {
+  // Redimensiona o canvas para o novo tamanho da janela
+  resizeCanvas(windowWidth, windowHeight);
+  
+  // Recalcula o tamanho máximo da imagem
+  let newMaxSize = calculateMaxSize();
+  
+  // Ajusta o tamanho atual da imagem proporcionalmente
+  if (maxSize > 0) {
+    let scale = newMaxSize / maxSize;
+    imageSize = imageSize * scale;
+  }
+  
+  maxSize = newMaxSize;
 }
 
 // Função principal que roda continuamente para desenhar a cena
@@ -49,8 +80,7 @@ function draw() {
   // Aplica textura na cabaça quando a imagem desaparece completamente
   if (useTexture) {
     texture(bgImage);
-      translate(0, 0, -100); // Move o modelo para trás
-
+    translate(0, 0, -100); // Move o modelo para trás
   } else {
     noFill();
     stroke(160, 100, 50); // Cor da linha do modelo 3D quando sem textura
@@ -76,19 +106,12 @@ function draw() {
       rotationProgress = 0; // Reseta o contador de rotação
       rotationComplete = false; // Resetando para uma nova rotação
       translate(10, 0, -3000); // Move o modelo para trás
-      
     } 
     
-     // Quando a imagem cresce completamente, volta à rotação normal
-    // else if (imageSize >= maxSize/5) {
-    //   noStroke()
-    // }
-
     // Quando a imagem cresce completamente, volta à rotação normal
     else if (imageSize >= maxSize) {
       rotationComplete = false; // Permite que a cabaça volte a girar normalmente
-      useTexture = false
-      
+      useTexture = false;
     }
   } else {
     // Se estiver girando, aumenta o progresso da rotação
@@ -98,14 +121,17 @@ function draw() {
       rotationComplete = true; // Marca que a rotação de 360° foi concluída
       animFrame = 0; // Reseta o contador da animação
       shrinking = false; // Inicia o crescimento da imagem
-      useTexture = false
+      useTexture = false;
     }
   }
   
-  // Desenha a imagem com base no tamanho calculado
+  // Desenha a imagem com base no tamanho calculado, mantendo as proporções
   push();
   imageMode(CENTER);
-  image(bgImage, 0, 0, imageSize, imageSize / aspectRatio);
+  // Calcula a largura e altura da imagem mantendo a proporção
+  let imageWidth = imageSize;
+  let imageHeight = imageSize / aspectRatio;
+  image(bgImage, 0, 0, imageWidth, imageHeight);
   pop();
 
   // Se não estiver girando, continua a animação normalmente
